@@ -153,6 +153,11 @@ void getFlights(Graph graph)
 		{
 			sscanf(pszRemainingTxt, "%s", szAirport);
 			iVertex = findAirport(graph, szAirport);
+			if (graph->vertexM[iVertex].bExists == FALSE)
+			{
+				printf("This Airport does not exist\n");
+				continue;
+			}
 			prtOne(graph, iVertex);
 		}
 		// If szRecordType is PRTALL token, calls printAll function.
@@ -168,6 +173,11 @@ void getFlights(Graph graph)
 		{
 			sscanf(pszRemainingTxt, "%s", szAirport);
 			iVertex = findAirport(graph, szAirport);
+			if (graph->vertexM[iVertex].bExists == FALSE)
+			{
+				printf("This Airport does not exist\n");
+				continue;
+			}
 			prtTraversal(graph, iVertex, iIndent);
 		}
 		setNotVisited(graph);
@@ -180,6 +190,11 @@ void getFlights(Graph graph)
 		{
 			sscanf(pszRemainingTxt, "%s", szAirport);
 			iVertex = findAirport(graph, szAirport);
+			if (graph->vertexM[iVertex].bExists == FALSE)
+			{
+				printf("This Airport does not exist\n");
+				continue;
+			}
 			iPrevArrTm2400 = 0;
 			prtTraversalChron(graph, iVertex, iIndent, iPrevArrTm2400);
 		}
@@ -188,20 +203,30 @@ void getFlights(Graph graph)
 		if (strcmp(szRecordType, "PRTALTS") == 0)
 		{
 			sscanf(pszRemainingTxt, "%s %s", szAirport, szDest);
+			if (graph->vertexM[findAirport(graph, szAirport)].bExists == FALSE || graph->vertexM[findAirport(graph, szDest)].bExists == FALSE)
+			{
+				printf("This Airport does not exist\n");
+				continue;
+			}
 			prtAlts(graph, findAirport(graph, szAirport), findAirport(graph, szDest));
 		}
-		setNotVisited(graph);
+		setNotVisited(graph);/*
 		if (strcmp(szRecordType, "MAXSTEPS") == 0)
 		{
 			sscanf(pszRemainingTxt, "%s %s", szAirport, szDest);
 			maxStepsChron(graph, findAirport(graph, szAirport), findAirport(graph, szDest), iPrevArrTm2400);
 		}
-		setNotVisited(graph);
+		setNotVisited(graph);*/
 		if (strcmp(szRecordType, "DELETE") == 0)
 		{
 			sscanf(pszRemainingTxt, "%s", szAirport);
 			deleteAirport(graph, szAirport);
 		}
+		/*
+		if (strcmp(szRecordType, "PRTHASH") == 0)
+		{
+			printHash(graph);
+		}*/
 	}
 }
 
@@ -292,7 +317,6 @@ Graph newGraph() {
 	// Return new graph
 	return graph;
 }
-
 /************************** *allocateEdgeNode **********************************
 EdgeNode *allocateEdgeNode(Graph graph, Flight flight)
 Purpose:
@@ -345,8 +369,8 @@ EdgeNode *searchEdgeNode(EdgeNode *e, char szFlightNr[3], EdgeNode **ePrecedes)
 	*ePrecedes = NULL;
 	for (e; e != NULL; e = e->pNextEdge) {
 		if (strcmp(szFlightNr, e->flight.szFlightNr) == 0) {
-			errExit("Duplicate flight number");
-			return e;
+			printf("Duplicate flight number\n");
+			//return e;
 		}
 		if (strcmp(szFlightNr, e->flight.szFlightNr) < 0) {
 			return NULL;
@@ -505,7 +529,7 @@ void determinePaths(Graph graph, int iVertex, int iDestVertex, int iCurStep, Pat
 	//base case
 	graph->vertexM[iVertex].bVisited = TRUE;
 	if (iVertex == iDestVertex)
-	{	
+	{
 		path.iStepCnt = iCurStep;
 		path.iTotalDuration = calcArr2400(path.stepM[iCurStep - 1]->flight.iDepTm2400, path.stepM[iCurStep - 1]->flight.iDurationMins, path.stepM[iCurStep - 1]->flight.iZoneChange) - path.stepM[0]->flight.iDepTm2400;
 		altPath->altPathM[altPath->iAltCnt] = path;
@@ -514,7 +538,7 @@ void determinePaths(Graph graph, int iVertex, int iDestVertex, int iCurStep, Pat
 	}
 	for (e = graph->vertexM[iVertex].successorList; e != NULL; e = e->pNextEdge)
 	{
-		
+
 		if (graph->vertexM[e->iDestVertex].bVisited == TRUE)
 		{
 			continue;
@@ -522,8 +546,8 @@ void determinePaths(Graph graph, int iVertex, int iDestVertex, int iCurStep, Pat
 		if (iPrevArrTm2400 <= e->flight.iDepTm2400 + SAFE_DELTA_BETWEEN_FLIGHTS && iVertex != e->iDestVertex)
 		{
 			path.stepM[iCurStep] = e;
-			determinePaths(graph, e->iDestVertex, iDestVertex, iCurStep + 1, path, calcArr2400(e->flight.iDepTm2400, e->flight.iDurationMins, e->flight.iZoneChange));	
-		}	
+			determinePaths(graph, e->iDestVertex, iDestVertex, iCurStep + 1, path, calcArr2400(e->flight.iDepTm2400, e->flight.iDurationMins, e->flight.iZoneChange));
+		}
 		graph->vertexM[e->iDestVertex].bVisited = FALSE;
 	}
 }
