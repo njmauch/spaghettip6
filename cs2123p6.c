@@ -169,9 +169,11 @@ void prtAll(Graph graph)
 
 	//for each vertex in a list, call printall
 	for (iVertex = 0; iVertex < graph->iNumVertices; iVertex++)
-		prtOne(graph, iVertex);
-
-
+	{
+		// check if airport exists 
+		if (graph->vertexM[iVertex].bExists == TRUE)
+			prtOne(graph, iVertex);
+	}
 }
 void prtTraversal(Graph graph, int iAirportVertex, int iIndent)
 {
