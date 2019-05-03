@@ -30,6 +30,15 @@ Input:
 	PRTCHRON szOrigin - This is similar to PRTSUCC; however, PRTSUCC prints all
 		of the successors.  PRTCHRON only prints successors which have a time
 		reasonably after the preceding flight.
+	MAXSTEPS szOrigin szDest
+        Prints the maximum number of steps to get from szOrigin to szDest.
+	PRTALTS szOrigin szDest
+	    For the specified origin and destination, it determines all possible paths (considering time) 
+		and prints them.
+	DELETE szAirport
+		Deletes the vertex and all flights involving this airport. It should free the edge
+		nodes that are no longer needed. Flights involving this airport may also be on the
+		other airport's adjacency lists and need to be deleted.
 Results:
 	Creates an ordered adjacency list of airports each having their own
 	predecessor and successor list of flights.  Prints the necessary information
@@ -46,7 +55,7 @@ Notes:
 #include <stdarg.h>
 #include <stdlib.h>
 #include "cs2123p6.h"
-
+//Declaration of global structure
 AltPath altPath;
 extern AltPath altPath;
 
@@ -269,7 +278,7 @@ Purpose:
 Parameters:
 	O Graph graph           Graph containing connections of airports/flights
 	I Flight flight         Flight containing information used for insertion
-	  EdgeNode **eList      ????
+	I EdgeNode **eList      Flights successor or predecessor list
 Notes:
 	(UPDATE TO ADD ANY NOTES)
 Returns
@@ -386,16 +395,18 @@ EdgeNode *allocateEdgeNode(Graph graph, Flight flight)
 /************************** *searchEdgeNode **********************************
 EdgeNode *searchEdgeNode(EdgeNode *e, char szFlightNr[3], EdgeNode **ePrecedes)
 Purpose:
-	Searches through graphs EdgeNodes???
+	Searches through graphs EdgeNodes
 Parameters:
-	? EdgeNode *e
+	I EdgeNode *e			 Beginning of successor or predecessor list to be searched
+							 through
 	I char szFlightNr[3]     Flight name
-	? EdgeNode **ePrecedes
+	O EdgeNode **ePrecedes   Double pointer to return preceding edge node to be 
+							 inserted into graph
 Notes:
 	(UPDATE TO ADD ANY NEW NOTES)
 Returns:
 	NULL - Edge Connection not in graph
-	e - ?
+	e - Node of value to be inserted
 *******************************************************************************/
 EdgeNode *searchEdgeNode(EdgeNode *e, char szFlightNr[3], EdgeNode **ePrecedes)
 {
