@@ -1,5 +1,5 @@
 /*******************************************************************************
-cs2123p5Driver.c by Nathan Mauch
+cs2123p6Driver.c by Nathan Mauch
 Purpose:
 	Shows connections of major airports and their flights to one another.  Keeps
 	track of all flights and their necessary information such as flight number,
@@ -84,6 +84,7 @@ void getFlights(Graph graph)
 	char szDest[4];						//Store destination name
 	char *pszRemainingTxt;              // Stores remaining text from getToken
 
+	int iMax = 0;
 	int iIndent = 0;        // Declare/initialize indent to 0 for PRTs
 	int iPrevArrTm2400;     // Declared var for PRTCHRON function
 	int iVertex = 0;        // Vertex value used for given airport
@@ -126,6 +127,12 @@ void getFlights(Graph graph)
 			if (findAirport(graph, flight.szDest) < 0) {
 				insertVertex(graph, flight.szDest);
 			}
+			//if flight to be inserted is in deleted airport, make airport active again
+			if (graph->vertexM[findAirport(graph, flight.szOrigin)].bExists == FALSE || graph->vertexM[findAirport(graph, flight.szDest)].bExists == FALSE)
+			{
+				graph->vertexM[findAirport(graph, flight.szOrigin)].bExists = TRUE;
+				graph->vertexM[findAirport(graph, flight.szDest)].bExists = TRUE;
+			}
 			// inserts/updates the flights predecessor list
 			insertFlight(graph, flight, &graph->vertexM[findAirport(graph, flight.szDest)].predecessorList);
 			// inserts/updates the flights successors list
@@ -151,11 +158,13 @@ void getFlights(Graph graph)
 		*/
 		if (strcmp(szRecordType, "PRTONE") == 0)
 		{
+			
 			sscanf(pszRemainingTxt, "%s", szAirport);
 			iVertex = findAirport(graph, szAirport);
+			//checks if the airport exists or not
 			if (graph->vertexM[iVertex].bExists == FALSE)
 			{
-				printf("This Airport does not exist\n");
+				printf(" Warning: This Airport does not exist\n");
 				continue;
 			}
 			prtOne(graph, iVertex);
@@ -171,11 +180,13 @@ void getFlights(Graph graph)
 		*/
 		if (strcmp(szRecordType, "PRTSUCC") == 0)
 		{
+			
 			sscanf(pszRemainingTxt, "%s", szAirport);
 			iVertex = findAirport(graph, szAirport);
+			//checks if the airport exists or not
 			if (graph->vertexM[iVertex].bExists == FALSE)
 			{
-				printf("This Airport does not exist\n");
+				printf(" Warning: This Airport does not exist\n");
 				continue;
 			}
 			prtTraversal(graph, iVertex, iIndent);
@@ -188,11 +199,13 @@ void getFlights(Graph graph)
 		*/
 		if (strcmp(szRecordType, "PRTCHRON") == 0)
 		{
+			
 			sscanf(pszRemainingTxt, "%s", szAirport);
 			iVertex = findAirport(graph, szAirport);
+			//checks if the airport exists or not
 			if (graph->vertexM[iVertex].bExists == FALSE)
 			{
-				printf("This Airport does not exist\n");
+				printf(" Warning: This Airport does not exist\n");
 				continue;
 			}
 			iPrevArrTm2400 = 0;
@@ -202,31 +215,50 @@ void getFlights(Graph graph)
 		setNotVisited(graph);
 		if (strcmp(szRecordType, "PRTALTS") == 0)
 		{
-			sscanf(pszRemainingTxt, "%s %s", szAirport, szDest);
+			//checks if the airport exists or not
 			if (graph->vertexM[findAirport(graph, szAirport)].bExists == FALSE || graph->vertexM[findAirport(graph, szDest)].bExists == FALSE)
 			{
-				printf("This Airport does not exist\n");
+				printf(" Warning: This Airport does not exist\n");
 				continue;
 			}
+			sscanf(pszRemainingTxt, "%s %s", szAirport, szDest);
 			prtAlts(graph, findAirport(graph, szAirport), findAirport(graph, szDest));
 		}
-		setNotVisited(graph);/*
+		// Makes sure to update all bVisted flags to FALSE
+		setNotVisited(graph);
+		/* If szRecordType is MAXSTEPS, scans the given origin airport 
+		** and destination airport and calls maxStepsChronInit
+		** function to find the maximum number of flights it takes to 
+		** reach the destination airport
+		*/
 		if (strcmp(szRecordType, "MAXSTEPS") == 0)
 		{
+			//checks if the airport exists or not
+			if (graph->vertexM[findAirport(graph, szAirport)].bExists == FALSE || graph->vertexM[findAirport(graph, szDest)].bExists == FALSE)
+			{
+				printf(" Warning: This Airport does not exist\n");
+				continue;
+			}
 			sscanf(pszRemainingTxt, "%s %s", szAirport, szDest);
-			maxStepsChron(graph, findAirport(graph, szAirport), findAirport(graph, szDest), iPrevArrTm2400);
+			iMax = maxStepsChronInit(graph, findAirport(graph, szAirport), findAirport(graph, szDest), iPrevArrTm2400);
+			printf(" Maximum chain chron for %s to %s contains %d steps\n", szAirport, szDest, iMax);
 		}
-		setNotVisited(graph);*/
+		// Makes sure to update all bVisted flags to FALSE
+		setNotVisited(graph);
+		/* If szRecordType is DELETE, scans the given airport
+		** and calls function deleteAirport to set airport.bExists to false
+		** and frees all of the edgeNodes associated to that airport
+		*/
 		if (strcmp(szRecordType, "DELETE") == 0)
 		{
 			sscanf(pszRemainingTxt, "%s", szAirport);
+			if (graph->vertexM[findAirport(graph, szAirport)].bExists == FALSE)
+			{
+				printf(" Warning: This Airport does not exist\n");
+				continue;
+			}
 			deleteAirport(graph, szAirport);
 		}
-		/*
-		if (strcmp(szRecordType, "PRTHASH") == 0)
-		{
-			printHash(graph);
-		}*/
 	}
 }
 
@@ -317,6 +349,7 @@ Graph newGraph() {
 	// Return new graph
 	return graph;
 }
+
 /************************** *allocateEdgeNode **********************************
 EdgeNode *allocateEdgeNode(Graph graph, Flight flight)
 Purpose:
@@ -370,7 +403,7 @@ EdgeNode *searchEdgeNode(EdgeNode *e, char szFlightNr[3], EdgeNode **ePrecedes)
 	for (e; e != NULL; e = e->pNextEdge) {
 		if (strcmp(szFlightNr, e->flight.szFlightNr) == 0) {
 			printf("Duplicate flight number\n");
-			//return e;
+			return e;
 		}
 		if (strcmp(szFlightNr, e->flight.szFlightNr) < 0) {
 			return NULL;
@@ -481,6 +514,18 @@ void errExit(char szFmt[], ...)
 								// the pre-compiler
 	exit(ERR_EXIT);
 }
+/******************************* newAltPath **************************************
+AltPath newAltPath()
+Purpose:
+	Allocates memory and initializes a new global variable altPath used to store
+	paths of flight plans from origin to destination
+Parameters:
+	N/A
+Notes:
+	1. If malloc fails, throws an error.
+Returns:
+	Returns a newly allocated global variable altPath
+*******************************************************************************/
 AltPath newAltPath()
 {
 	AltPath ap = (AltPath)malloc(sizeof(AltPathImp));
@@ -489,6 +534,18 @@ AltPath newAltPath()
 	ap->iAltCnt = 0;
 	return ap;
 }
+/******************************* newPath **************************************
+Path newPath()
+Purpose:
+	Allocates memory and initializes a new path used for saving the path of a given
+	origin airport to destination airport
+Parameters:
+	N/A
+Notes:
+	1. If malloc fails, throws an error.
+Returns:
+	Returns a newly allocated path.
+*******************************************************************************/
 Path newPath()
 {
 	Path *path = (Path *)malloc(sizeof(Path));
@@ -497,23 +554,50 @@ Path newPath()
 	path->iStepCnt = 0;
 	return *path;
 }
+/******************************* prtAlts **************************************
+void prtAlts(Graph graph, int iOriginVertex, int iDestVertex)
+Purpose:
+	Given an origin and destination vertex and prints out all of the alternative
+	paths possible to reach the destination considering time
+Parameters:
+	I Graph graph       Graph containing connections of airports/flights.
+	I int iOriginVertex Vertex value of the origin airport
+	I int iDestVertex   Vertex value of the destination airport
+Notes:
+	1. Uses global structure altPath to print out all possible paths of origin
+	to destination.
+	2. Invokes determinePaths to determine the path of alternative paths
+Returns:
+	N/A
+*******************************************************************************/
 void prtAlts(Graph graph, int iOriginVertex, int iDestVertex)
 {
 	int flightDurHours, flightDurMins;
 	int iCurStep = 0;
 	int iPrevArrTime = 0;
 	altPath->iAltCnt = 0;
+	//creates empty path to be filled by determinePaths 
 	Path path = newPath();
 	int i, j;
-
+	//function determinePaths to find all alternative paths
 	determinePaths(graph, iOriginVertex, iDestVertex, iCurStep, path, iPrevArrTime);
+	//if no alternative paths found print this warning
+	if (altPath->iAltCnt == 0)
+	{
+		printf(" No paths for flights from %s to %s\n", graph->vertexM[iOriginVertex].szAirport, graph->vertexM[iDestVertex].szAirport);
+		return;
+	}
+	//headers for printing out alternative paths
 	printf(" Alternatives for flights from %s to %s\n", graph->vertexM[iOriginVertex].szAirport, graph->vertexM[iDestVertex].szAirport);
 	printf(" Alt TDur             Org Dst Fl Dep - Arr Dura\n");
+	//loop through global structure altPath to print out alternative paths
 	for (i = 0; i < altPath->iAltCnt; i++)
 	{
+		//convert total duration of flights into seperate hours and minutes
 		flightDurHours = altPath->altPathM[i].iTotalDuration / 100;
 		flightDurMins = altPath->altPathM[i].iTotalDuration % 100;
 		printf("%4d %d Hours %d mins\n", i + 1, flightDurHours, flightDurMins);
+		//loop through the steps of individual path and print them to output
 		for (j = 0; j < altPath->altPathM[i].iStepCnt; j++)
 		{
 			iPrevArrTime = calcArr2400(altPath->altPathM[i].stepM[j]->flight.iDepTm2400, altPath->altPathM[i].stepM[j]->flight.iDurationMins, altPath->altPathM[i].stepM[j]->flight.iZoneChange);
@@ -521,33 +605,58 @@ void prtAlts(Graph graph, int iOriginVertex, int iDestVertex)
 		}
 	}
 }
+/******************************* determinePaths **************************************
+void determinePaths(Graph graph, int iVertex, int iDestVertex, int iCurStep, Path path, int iPrevArrTm2400)
+Purpose:
+	Recursive function that is given origin and destination to determine path to reach destination
+	airport. Given empty path that is then insterted into global altPath if path is found to 
+	destination airport
+Parameters:
+	I Graph graph        Graph containing connections of airports/flights.
+	I int iVertex	     Vertex value of the current airport
+	I int iDestVertex    Vertex value of the destination airport
+	I int iCurStep       Subscript into path->stepM to save an edge pointer
+	O Path Path			 Path that stores steps of flights to reach destination
+	I int iPrevArrTm2400 Arrival time of the flight
+Notes:
+	1. Inserts path into global structure altPath
+Returns:
+	N/A
+*******************************************************************************/
 void determinePaths(Graph graph, int iVertex, int iDestVertex, int iCurStep, Path path, int iPrevArrTm2400)
 {
 	EdgeNode *e;
-	if (graph->vertexM[iVertex].bVisited == TRUE || graph->vertexM[iVertex].bExists == FALSE)
-		return;
+
 	//base case
+	if (graph->vertexM[iVertex].bVisited == TRUE)
+		return;
+	//sets airport to visited
 	graph->vertexM[iVertex].bVisited = TRUE;
+	//if destination is reached inserts path into global structure altPath
 	if (iVertex == iDestVertex)
-	{
-		path.iStepCnt = iCurStep;
+	{	
+		path.iStepCnt = iCurStep;			//number of steps taken to reach destination
+		//calculates the total time of the flight
 		path.iTotalDuration = calcArr2400(path.stepM[iCurStep - 1]->flight.iDepTm2400, path.stepM[iCurStep - 1]->flight.iDurationMins, path.stepM[iCurStep - 1]->flight.iZoneChange) - path.stepM[0]->flight.iDepTm2400;
-		altPath->altPathM[altPath->iAltCnt] = path;
+		altPath->altPathM[altPath->iAltCnt] = path;			//inserting the path of flights into altPath->altPathM
 		altPath->iAltCnt += 1;
 		return;
 	}
+	//loops through successer list to find out if possible to reach destination airport
 	for (e = graph->vertexM[iVertex].successorList; e != NULL; e = e->pNextEdge)
 	{
-
+		
 		if (graph->vertexM[e->iDestVertex].bVisited == TRUE)
 		{
 			continue;
 		}
+		//checks if flight can be reached in reasonable time
 		if (iPrevArrTm2400 <= e->flight.iDepTm2400 + SAFE_DELTA_BETWEEN_FLIGHTS && iVertex != e->iDestVertex)
 		{
-			path.stepM[iCurStep] = e;
-			determinePaths(graph, e->iDestVertex, iDestVertex, iCurStep + 1, path, calcArr2400(e->flight.iDepTm2400, e->flight.iDurationMins, e->flight.iZoneChange));
-		}
+			path.stepM[iCurStep] = e;			//saves edge node into path.stepM
+			determinePaths(graph, e->iDestVertex, iDestVertex, iCurStep + 1, path, calcArr2400(e->flight.iDepTm2400, e->flight.iDurationMins, e->flight.iZoneChange));	
+		}	
+		//sets airport back to false in case is a part of another alternative path
 		graph->vertexM[e->iDestVertex].bVisited = FALSE;
 	}
 }

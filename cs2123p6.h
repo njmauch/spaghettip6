@@ -122,6 +122,9 @@ void insertVertex(Graph graph, char szAirport[]);
 void getFlights(Graph graph);
 AltPath newAltPath();
 Path newPath();
+int maxStepsChronInit(Graph graph, int iVertex, int iDestVertex, int iPrevArrTm2400);
+void freeEdgeNodes(Graph graph, int iVertex);
+
 // Recursive functions for program 5
 void prtTraversal(Graph graph, int iAirportVertex, int indent);
 void prtTraversalChron(Graph graph, int iVertex, int iIndent, int iPrevArrTm2400);
