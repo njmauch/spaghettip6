@@ -9,12 +9,13 @@ Purpose:
 	Determines the maximum number of steps to go to from the origin to the destination.
 Parameters:
 	O Graph graph           Graph containing connections of airports/flights
-	I Flight flight         Flight containing information used for insertion
-	I EdgeNode **eList      Flights successor or predecessor list
+	I int iVertex 			Starting vertex 
+	I int iDestVertex 		Destination vertex in which the function calculates max steps
+	I iPrevArrTm2400 		//ADD NOTE HERE
 Notes:
-	(UPDATE TO ADD ANY NOTES)
+	N/A
 Returns
-	(Not too sure correct return value)
+	Returns the maximum number of steps to go from the origin to the destination.
 *******************************************************************************/
 
 
@@ -27,22 +28,34 @@ Returns
 int maxStepsChron(Graph graph, int iVertex, int iDestVertex, int iPrevArrTm2400)
 {
 	EdgeNode *e;
-	int i = 0;
+	int iReturn = 0;
 
-	//base case >>>
-	if(iVertex ==)
+	//base cases
+	if(graph->vertexM[iVertex].bVisited)
+		return 0;
+	if(iVertex == iDestVertex)
+		return 1;
 
 	//change bVisited to TRUE	
-	graph->vertexM[iAirportVertex].bVisited = TRUE;
+	graph->vertexM[iVertex].bVisited = TRUE;
 
-	for (e = graph->vertexM[iAirportVertex].successorList; e != NULL; e = e->pNextEdge)
+	for (e = graph->vertexM[iVertex].successorList; e != NULL; e = e->pNextEdge)
 	{
-		if (iPrevArrTm2400 <= e->flight.iDepTm2400 + SAFE_DELTA_BETWEEN_FLIGHTS && iAirportVertex != e->iDestVertex)
-		{
-			i += 1;
+		int iMax = maxStepsChron(graph, e->iDestVertex, iDestVertex);
+
+		if (iPrevArrTm2400 <= e->flight.iDepTm2400 + SAFE_DELTA_BETWEEN_FLIGHTS && iVertex != e->iDestVertex)	//check to see if successor flight occurs after the
+		{																												//arrival of the previous flight.
+			if (iMax > iReturn)
+				iReturn = iMax;
 		}
 	}
 	//change bVisited to FALSE
-	graph->vertexM[e->iDestVertex].bVisited = FALSE;
+	graph->vertexM[iVertex].bVisited = FALSE;
+
+	if(iReturn != 0)
+		iReturn++;
+
+	return iReturn;
 }
+
 
